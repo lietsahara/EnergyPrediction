@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Potential Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-green-600 mb-4">
+                <i class="fas fa-bolt mr-3"></i>Energy Potential Predictor
+            </h1>
+            <p class="text-xl text-gray-600">Predict solar, wind, and hydro energy potential for any location</p>
+        </header>
+
+        <!-- Input Form -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Location Type Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Location Input Method</label>
+                    <div class="flex space-x-4">
+                        <button id="btn-coordinates" class="location-btn active px-4 py-2 rounded-lg border-2 border-green-500 bg-green-50 text-green-700">
+                            Coordinates
+                        </button>
+                        <button id="btn-city" class="location-btn px-4 py-2 rounded-lg border-2 border-gray-300 text-gray-600">
+                            City Name
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Energy Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Energy Type</label>
+                    <select id="energyType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="solar">Solar Power</option>
+                        <option value="wind">Wind Power</option>
+                        <option value="hydro">Hydro Power</option>
+                        <option value="compare">Compare All Types</option>
+                    </select>
+                </div>
+
+                <!-- Coordinates Input -->
+                <div id="coordinates-input">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Latitude</label>
+                            <input type="number" id="latitude" step="any" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="e.g., 37.7749" value="37.7749">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Longitude</label>
+                            <input type="number" id="longitude" step="any"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="e.g., -122.4194" value="-122.4194">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- City Input -->
+                <div id="city-input" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">City Name</label>
+                    <input type="text" id="cityName"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                           placeholder="e.g., London, Tokyo, New York">
+                </div>
+
+                <!-- Area Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Installation Area (m²)
+                    </label>
+                    <input type="number" id="area" value="100" min="1"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-4">
+                    <button id="btn-predict" 
+                            class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition duration-200 font-semibold">
+                        <i class="fas fa-chart-line mr-2"></i>Predict Energy
+                    </button>
+                    <button id="btn-reset"
+                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-redo mr-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden">
+            <!-- Single Prediction Result -->
+            <div id="single-result" class="hidden bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4" id="result-title"></h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div class="text-green-600 text-sm font-medium">Annual Energy</div>
+                        <div class="text-2xl font-bold text-green-700" id="annual-energy"></div>
+                        <div class="text-green-600 text-sm">kWh/year</div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div class="text-blue-600 text-sm font-medium">Suitability Score</div>
+                        <div class="text-2xl font-bold text-blue-700" id="suitability"></div>
+                        <div class="text-blue-600 text-sm">0-1 scale</div>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <div class="text-purple-600 text-sm font-medium">Confidence</div>
+                        <div class="text-2xl font-bold text-purple-700" id="confidence"></div>
+                        <div class="text-purple-600 text-sm">Model confidence</div>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                        <div class="text-orange-600 text-sm font-medium">Daily Energy</div>
+                        <div class="text-2xl font-bold text-orange-700" id="daily-energy"></div>
+                        <div class="text-orange-600 text-sm">kWh/day</div>
+                    </div>
+                </div>
+                
+                <!-- Metrics -->
+                <div id="metrics-section" class="mt-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3">Environmental Metrics</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="metrics-grid"></div>
+                </div>
+            </div>
+
+            <!-- Comparison Result -->
+            <div id="comparison-result" class="hidden bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6">Energy Type Comparison</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="comparison-cards"></div>
+                <div class="mt-8">
+                    <canvas id="comparisonChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                <div class="text-gray-700">Analyzing location data...</div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                <div>
+                    <h4 class="font-semibold text-red-800" id="error-title">Error</h4>
+                    <p class="text-red-600 text-sm" id="error-message"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const btnCoordinates = document.getElementById('btn-coordinates');
+        const btnCity = document.getElementById('btn-city');
+        const coordinatesInput = document.getElementById('coordinates-input');
+        const cityInput = document.getElementById('city-input');
+        const energyTypeSelect = document.getElementById('energyType');
+        const btnPredict = document.getElementById('btn-predict');
+        const btnReset = document.getElementById('btn-reset');
+        const resultsSection = document.getElementById('results');
+        const singleResult = document.getElementById('single-result');
+        const comparisonResult = document.getElementById('comparison-result');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        // Location type toggle
+        btnCoordinates.addEventListener('click', () => {
+            btnCoordinates.classList.add('active', 'border-green-500', 'bg-green-50', 'text-green-700');
+            btnCoordinates.classList.remove('border-gray-300', 'text-gray-600');
+            btnCity.classList.remove('active', 'border-green-500', 'bg-green-50', 'text-green-700');
+            btnCity.classList.add('border-gray-300', 'text-gray-600');
+            coordinatesInput.classList.remove('hidden');
+            cityInput.classList.add('hidden');
+        });
+
+        btnCity.addEventListener('click', () => {
+            btnCity.classList.add('active', 'border-green-500', 'bg-green-50', 'text-green-700');
+            btnCity.classList.remove('border-gray-300', 'text-gray-600');
+            btnCoordinates.classList.remove('active', 'border-green-500', 'bg-green-50', 'text-green-700');
+            btnCoordinates.classList.add('border-gray-300', 'text-gray-600');
+            cityInput.classList.remove('hidden');
+            coordinatesInput.classList.add('hidden');
+        });
+
+        // Prediction function
+        btnPredict.addEventListener('click', async () => {
+            const locationType = btnCoordinates.classList.contains('active') ? 'coordinates' : 'city';
+            const energyType = energyTypeSelect.value;
+            const area = document.getElementById('area').value;
+
+            let requestData = {
+                location_type: locationType,
+                energy_type: energyType,
+                area: area
+            };
+
+            if (locationType === 'coordinates') {
+                requestData.latitude = document.getElementById('latitude').value;
+                requestData.longitude = document.getElementById('longitude').value;
+            } else {
+                requestData.city_name = document.getElementById('cityName').value;
+            }
+
+            if (!validateInput(requestData)) {
+                return;
+            }
+
+            showLoading();
+            hideError();
+
+            try {
+                const endpoint = energyType === 'compare' ? '/compare' : '/predict';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (energyType === 'compare') {
+                        displayComparison(data);
+                    } else {
+                        displaySingleResult(data);
+                    }
+                } else {
+                    showError('Prediction Failed', data.error);
+                }
+            } catch (error) {
+                showError('Network Error', 'Failed to connect to the server');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Reset function
+        btnReset.addEventListener('click', () => {
+            document.getElementById('latitude').value = '37.7749';
+            document.getElementById('longitude').value = '-122.4194';
+            document.getElementById('cityName').value = '';
+            document.getElementById('area').value = '100';
+            energyTypeSelect.value = 'solar';
+            resultsSection.classList.add('hidden');
+            hideError();
+        });
+
+        // Utility functions
+        function validateInput(data) {
+            if (data.location_type === 'coordinates') {
+                const lat = parseFloat(data.latitude);
+                const lon = parseFloat(data.longitude);
+                if (isNaN(lat) || lat < -90 || lat > 90) {
+                    showError('Invalid Input', 'Latitude must be between -90 and 90');
+                    return false;
+                }
+                if (isNaN(lon) || lon < -180 || lon > 180) {
+                    showError('Invalid Input', 'Longitude must be between -180 and 180');
+                    return false;
+                }
+            } else {
+                if (!data.city_name.trim()) {
+                    showError('Invalid Input', 'Please enter a city name');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function displaySingleResult(data) {
+            const pred = data.prediction;
+            
+            document.getElementById('result-title').textContent = 
+                `${data.energy_type.toUpperCase()} Energy Prediction for ${data.location}`;
+            document.getElementById('annual-energy').textContent = pred.energy_kwh.toLocaleString();
+            document.getElementById('suitability').textContent = pred.suitability_score;
+            document.getElementById('confidence').textContent = pred.confidence;
+            document.getElementById('daily-energy').textContent = pred.daily_energy_kwh.toLocaleString();
+
+            // Display metrics
+            const metricsGrid = document.getElementById('metrics-grid');
+            metricsGrid.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(data.metrics)) {
+                const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const formattedValue = typeof value === 'number' ? value.toFixed(2) : value;
+                
+                metricsGrid.innerHTML += `
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <div class="text-gray-600 text-sm font-medium">${formattedKey}</div>
+                        <div class="text-lg font-semibold text-gray-800">${formattedValue}</div>
+                    </div>
+                `;
+            }
+
+            singleResult.classList.remove('hidden');
+            comparisonResult.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+        }
+
+        function displayComparison(data) {
+            const comparisonCards = document.getElementById('comparison-cards');
+            comparisonCards.innerHTML = '';
+
+            const energyTypes = {
+                solar: { color: 'yellow', icon: 'sun' },
+                wind: { color: 'blue', icon: 'wind' },
+                hydro: { color: 'cyan', icon: 'water' }
+            };
+
+            for (const [etype, result] of Object.entries(data.comparison)) {
+                const config = energyTypes[etype];
+                comparisonCards.innerHTML += `
+                    <div class="bg-${config.color}-50 border border-${config.color}-200 rounded-lg p-4">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-${config.icon} text-${config.color}-600 text-xl mr-3"></i>
+                            <h4 class="text-lg font-semibold text-gray-800 capitalize">${etype} Energy</h4>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Annual Energy:</span>
+                                <span class="font-semibold">${result.energy_kwh.toLocaleString()} kWh</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Suitability:</span>
+                                <span class="font-semibold">${result.suitability}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Confidence:</span>
+                                <span class="font-semibold">${result.confidence}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Create chart
+            createComparisonChart(data.comparison);
+
+            singleResult.classList.add('hidden');
+            comparisonResult.classList.remove('hidden');
+            resultsSection.classList.remove('hidden');
+        }
+
+        function createComparisonChart(comparisonData) {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            const labels = Object.keys(comparisonData).map(key => key.toUpperCase());
+            const energyData = Object.values(comparisonData).map(data => data.energy_kwh);
+            const suitabilityData = Object.values(comparisonData).map(data => data.suitability * 1000); // Scale for visibility
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Annual Energy (kWh)',
+                            data: energyData,
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Suitability Score (x1000)',
+                            data: suitabilityData,
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            type: 'line',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Annual Energy (kWh)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Suitability Score (x1000)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showLoading() {
+            loading.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loading.classList.add('hidden');
+        }
+
+        function showError(title, message) {
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorDiv.classList.add('hidden');
+        }
+    </script>
+
+    <style>
+        .location-btn.active {
+            border-color: #10B981;
+            background-color: #ECFDF5;
+            color: #047857;
+        }
+        
+        .location-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .location-btn:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</body>
+</html>
